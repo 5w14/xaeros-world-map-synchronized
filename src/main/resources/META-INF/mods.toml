@@ -61,3 +61,11 @@ mandatory = true
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
+
+# Xaero's World Map dependency - required for map synchronization
+[[dependencies."${mod_id}"]]
+modId = "xaeroworldmap"
+mandatory = true
+versionRange = "[1.40.0,)"
+ordering = "AFTER"
+side = "BOTH"

@@ -2,11 +2,12 @@
   "required": true,
   "minVersion": "0.8",
   "package": "net.fivew14.xaerosync.mixin",
-  "compatibilityLevel": "JAVA_8",
-  "refmap": "xaerosync.refmap.json",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "xaeromapsync.refmap.json",
   "mixins": [
   ],
   "client": [
+    "MapWriterMixin"
   ],
   "injectors": {
     "defaultRequire": 1
