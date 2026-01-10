@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Metadata for a synced chunk, stored as a header in the chunk file.
- * 
+ * <p>
  * File format:
  * - int version (4 bytes)
  * - long uuidMost (8 bytes)
@@ -18,10 +18,10 @@ import java.util.UUID;
  * Total: 28 bytes
  */
 public record ChunkMetadata(UUID contributor, long timestamp) {
-    
+
     public static final int HEADER_SIZE = 28;
     public static final int CURRENT_VERSION = 1;
-    
+
     /**
      * Write metadata to a DataOutput stream (for file storage).
      */
@@ -31,7 +31,7 @@ public record ChunkMetadata(UUID contributor, long timestamp) {
         out.writeLong(contributor.getLeastSignificantBits());
         out.writeLong(timestamp);
     }
-    
+
     /**
      * Read metadata from a DataInput stream (for file storage).
      */
@@ -45,7 +45,7 @@ public record ChunkMetadata(UUID contributor, long timestamp) {
         long timestamp = in.readLong();
         return new ChunkMetadata(new UUID(uuidMost, uuidLeast), timestamp);
     }
-    
+
     /**
      * Write to network buffer.
      */
@@ -53,7 +53,7 @@ public record ChunkMetadata(UUID contributor, long timestamp) {
         buf.writeUUID(contributor);
         buf.writeLong(timestamp);
     }
-    
+
     /**
      * Read from network buffer.
      */

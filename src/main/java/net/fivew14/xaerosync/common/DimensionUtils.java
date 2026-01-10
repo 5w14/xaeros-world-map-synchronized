@@ -6,22 +6,23 @@ import net.minecraft.resources.ResourceLocation;
  * Utility methods for converting dimension IDs to/from filesystem-safe names.
  */
 public final class DimensionUtils {
-    
-    private DimensionUtils() {} // Utility class
-    
+
+    private DimensionUtils() {
+    } // Utility class
+
     /**
      * Convert a dimension ResourceLocation to a filesystem-safe name.
      * Replaces ':' with '$' to avoid filesystem issues.
-     * 
+     * <p>
      * Example: "minecraft:overworld" -> "minecraft$overworld"
      */
     public static String toFilesystemName(ResourceLocation dimension) {
         return dimension.getNamespace() + "$" + dimension.getPath();
     }
-    
+
     /**
      * Convert a filesystem name back to a ResourceLocation.
-     * 
+     * <p>
      * Example: "minecraft$overworld" -> "minecraft:overworld"
      */
     public static ResourceLocation fromFilesystemName(String name) {
@@ -34,7 +35,7 @@ public final class DimensionUtils {
         String path = name.substring(dollarIndex + 1);
         return new ResourceLocation(namespace, path);
     }
-    
+
     /**
      * Check if a filesystem name is a valid dimension folder name.
      */

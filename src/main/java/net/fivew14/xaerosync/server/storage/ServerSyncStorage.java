@@ -19,25 +19,25 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Handles file I/O for synced chunk data on the server.
- * 
+ * <p>
  * Storage structure:
  * WORLD_FOLDER/.xaerosync/{dimension}/{x}_{z}.bin
- * 
+ * <p>
  * Each .bin file contains:
  * - 28-byte header (ChunkMetadata: version, UUID, timestamp)
  * - GZIP-compressed Xaero format data
  */
 public class ServerSyncStorage {
-    
+
     private static final String STORAGE_FOLDER = ".xaerosync";
-    
+
     private final Path storageRoot;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    
+
     public ServerSyncStorage(Path worldFolder) {
         this.storageRoot = worldFolder.resolve(STORAGE_FOLDER);
     }
-    
+
     /**
      * Create a ServerSyncStorage from a ServerLevel.
      */
@@ -45,21 +45,21 @@ public class ServerSyncStorage {
         Path worldFolder = level.getServer().getWorldPath(LevelResource.ROOT);
         return new ServerSyncStorage(worldFolder);
     }
-    
+
     /**
      * Initialize storage directories.
      */
     public void initialize() throws IOException {
         Files.createDirectories(storageRoot);
     }
-    
+
     /**
      * Get the storage root path.
      */
     public Path getStorageRoot() {
         return storageRoot;
     }
-    
+
     /**
      * Get the file path for a chunk.
      */
@@ -67,7 +67,7 @@ public class ServerSyncStorage {
         String dimFolder = DimensionUtils.toFilesystemName(coord.dimension());
         return storageRoot.resolve(dimFolder).resolve(coord.x() + "_" + coord.z() + ".bin");
     }
-    
+
     /**
      * Check if a chunk exists in storage.
      */
@@ -79,7 +79,7 @@ public class ServerSyncStorage {
             lock.readLock().unlock();
         }
     }
-    
+
     /**
      * Read chunk metadata only (without loading the full data).
      * Returns empty if chunk doesn't exist.
@@ -91,7 +91,7 @@ public class ServerSyncStorage {
             if (!Files.exists(path)) {
                 return Optional.empty();
             }
-            
+
             try (DataInputStream dis = new DataInputStream(new FileInputStream(path.toFile()))) {
                 return Optional.of(ChunkMetadata.read(dis));
             }
@@ -102,7 +102,7 @@ public class ServerSyncStorage {
             lock.readLock().unlock();
         }
     }
-    
+
     /**
      * Read full chunk data (metadata + compressed data).
      * Returns null if chunk doesn't exist or read fails.
@@ -115,7 +115,7 @@ public class ServerSyncStorage {
             if (!Files.exists(path)) {
                 return null;
             }
-            
+
             try (DataInputStream dis = new DataInputStream(new FileInputStream(path.toFile()))) {
                 ChunkMetadata metadata = ChunkMetadata.read(dis);
                 byte[] data = dis.readAllBytes();
@@ -128,7 +128,7 @@ public class ServerSyncStorage {
             lock.readLock().unlock();
         }
     }
-    
+
     /**
      * Write chunk data to storage.
      * Creates parent directories if needed.
@@ -138,13 +138,13 @@ public class ServerSyncStorage {
         try {
             Path path = getChunkPath(coord);
             Files.createDirectories(path.getParent());
-            
+
             try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(path.toFile()))) {
                 ChunkMetadata metadata = new ChunkMetadata(contributor, timestamp);
                 metadata.write(dos);
                 dos.write(data);
             }
-            
+
             XaeroSync.LOGGER.debug("Wrote chunk {} from {} at {}", coord, contributor, timestamp);
             return true;
         } catch (IOException e) {
@@ -154,7 +154,7 @@ public class ServerSyncStorage {
             lock.writeLock().unlock();
         }
     }
-    
+
     /**
      * Delete a chunk from storage.
      */
@@ -170,7 +170,7 @@ public class ServerSyncStorage {
             lock.writeLock().unlock();
         }
     }
-    
+
     /**
      * Scan storage and populate a registry with all existing chunks.
      */
@@ -180,12 +180,12 @@ public class ServerSyncStorage {
             if (!Files.exists(storageRoot)) {
                 return;
             }
-            
+
             try (var dimDirs = Files.newDirectoryStream(storageRoot, Files::isDirectory)) {
                 for (Path dimDir : dimDirs) {
                     String dimName = dimDir.getFileName().toString();
                     ResourceLocation dimension = DimensionUtils.fromFilesystemName(dimName);
-                    
+
                     try (var chunkFiles = Files.newDirectoryStream(dimDir, "*.bin")) {
                         for (Path chunkFile : chunkFiles) {
                             String filename = chunkFile.getFileName().toString();
@@ -204,7 +204,7 @@ public class ServerSyncStorage {
             lock.readLock().unlock();
         }
     }
-    
+
     /**
      * Parse a chunk filename like "5_-3.bin" into coordinates.
      */
@@ -226,7 +226,7 @@ public class ServerSyncStorage {
             return null;
         }
     }
-    
+
     /**
      * Read metadata directly from a path (internal use).
      */
@@ -238,9 +238,10 @@ public class ServerSyncStorage {
             return Optional.empty();
         }
     }
-    
+
     /**
      * Container for chunk metadata and compressed data.
      */
-    public record ChunkData(ChunkMetadata metadata, byte[] data) {}
+    public record ChunkData(ChunkMetadata metadata, byte[] data) {
+    }
 }

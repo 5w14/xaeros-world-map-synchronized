@@ -2,25 +2,20 @@ package net.fivew14.xaerosync.mixin;
 
 import net.fivew14.xaerosync.client.sync.ChunkExplorationCallback;
 import net.fivew14.xaerosync.common.ChunkCoord;
-import net.minecraft.core.Registry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.chunk.LevelChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import xaero.map.MapProcessor;
 import xaero.map.MapWriter;
 import xaero.map.biome.BlockTintProvider;
-import xaero.map.region.MapRegion;
-import xaero.map.region.MapTile;
-import xaero.map.region.MapTileChunk;
 import xaero.map.region.MapUpdateFastConfig;
 import xaero.map.region.OverlayManager;
 
@@ -30,10 +25,10 @@ import xaero.map.region.OverlayManager;
  */
 @Mixin(value = MapWriter.class, remap = false)
 public abstract class MapWriterMixin {
-    
+
     @Shadow
     private MapProcessor mapProcessor;
-    
+
     /**
      * Inject after a tile has been written and committed to the chunk.
      * This captures when map data has been updated/created.
@@ -53,14 +48,14 @@ public abstract class MapWriterMixin {
         if (layerToWrite != Integer.MAX_VALUE) {
             return;
         }
-        
+
         // Get dimension from the world
         ResourceKey<Level> dimension = world.dimension();
-        
+
         // Convert to tile chunk coordinates (4 MC chunks = 1 tile chunk)
         // chunkX/chunkZ are MC chunk coords, tileChunkX/tileChunkZ are tile chunk coords
         ChunkCoord coord = new ChunkCoord(dimension.location(), tileChunkX, tileChunkZ);
-        
+
         // Notify the callback that a chunk was explored
         ChunkExplorationCallback.onChunkExplored(coord, tileChunkLocalX, tileChunkLocalZ, mapProcessor);
     }

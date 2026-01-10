@@ -16,7 +16,7 @@ public class XaeroSyncNetworking {
 
     public static void init() {
         int idx = 0;
-        
+
         // Server -> Client packets
         CHANNEL.registerMessage(idx++,
                 S2CSyncConfigPacket.class,
@@ -24,35 +24,35 @@ public class XaeroSyncNetworking {
                 S2CSyncConfigPacket::decode,
                 S2CSyncConfigPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        
+
         CHANNEL.registerMessage(idx++,
                 S2CRegistryChunkPacket.class,
                 S2CRegistryChunkPacket::encode,
                 S2CRegistryChunkPacket::decode,
                 S2CRegistryChunkPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        
+
         CHANNEL.registerMessage(idx++,
                 S2CRegistryUpdatePacket.class,
                 S2CRegistryUpdatePacket::encode,
                 S2CRegistryUpdatePacket::decode,
                 S2CRegistryUpdatePacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        
+
         CHANNEL.registerMessage(idx++,
                 S2CChunkDataPacket.class,
                 S2CChunkDataPacket::encode,
                 S2CChunkDataPacket::decode,
                 S2CChunkDataPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        
+
         CHANNEL.registerMessage(idx++,
                 S2CUploadResultPacket.class,
                 S2CUploadResultPacket::encode,
                 S2CUploadResultPacket::decode,
                 S2CUploadResultPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        
+
         // Client -> Server packets
         CHANNEL.registerMessage(idx++,
                 C2SRequestChunksPacket.class,
@@ -60,7 +60,7 @@ public class XaeroSyncNetworking {
                 C2SRequestChunksPacket::decode,
                 C2SRequestChunksPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        
+
         CHANNEL.registerMessage(idx++,
                 C2SUploadChunkPacket.class,
                 C2SUploadChunkPacket::encode,

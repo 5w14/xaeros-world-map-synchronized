@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
  * This corresponds to a MapTileChunk in Xaero's World Map (4 Minecraft chunks).
  */
 public record ChunkCoord(ResourceLocation dimension, int x, int z) {
-    
+
     /**
      * Create a ChunkCoord from Minecraft chunk coordinates.
      * Converts from 16x16 MC chunks to 64x64 tile chunks.
@@ -17,7 +17,7 @@ public record ChunkCoord(ResourceLocation dimension, int x, int z) {
         // Each tile chunk is 4x4 MC chunks, so divide by 4
         return new ChunkCoord(dimension, mcChunkX >> 2, mcChunkZ >> 2);
     }
-    
+
     /**
      * Create a ChunkCoord from block coordinates.
      */
@@ -25,35 +25,35 @@ public record ChunkCoord(ResourceLocation dimension, int x, int z) {
         // Each tile chunk is 64x64 blocks
         return new ChunkCoord(dimension, blockX >> 6, blockZ >> 6);
     }
-    
+
     /**
      * Get the region X coordinate (8x8 tile chunks per region).
      */
     public int regionX() {
         return x >> 3;
     }
-    
+
     /**
      * Get the region Z coordinate.
      */
     public int regionZ() {
         return z >> 3;
     }
-    
+
     /**
      * Get the local X coordinate within the region (0-7).
      */
     public int localX() {
         return x & 7;
     }
-    
+
     /**
      * Get the local Z coordinate within the region (0-7).
      */
     public int localZ() {
         return z & 7;
     }
-    
+
     /**
      * Write to network buffer.
      */
@@ -62,7 +62,7 @@ public record ChunkCoord(ResourceLocation dimension, int x, int z) {
         buf.writeInt(x);
         buf.writeInt(z);
     }
-    
+
     /**
      * Read from network buffer.
      */
@@ -72,7 +72,7 @@ public record ChunkCoord(ResourceLocation dimension, int x, int z) {
         int z = buf.readInt();
         return new ChunkCoord(dim, x, z);
     }
-    
+
     @Override
     public String toString() {
         return String.format("ChunkCoord[%s, %d, %d]", dimension, x, z);

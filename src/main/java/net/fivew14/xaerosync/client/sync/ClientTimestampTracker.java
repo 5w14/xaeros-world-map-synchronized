@@ -18,68 +18,68 @@ import java.util.concurrent.ConcurrentHashMap;
  * Persists local timestamps to disk per-server to avoid re-downloading chunks.
  */
 public class ClientTimestampTracker {
-    
+
     private static final int FILE_VERSION = 1;
-    
+
     // Map from ChunkCoord to local timestamp
     private final Map<ChunkCoord, Long> localTimestamps = new ConcurrentHashMap<>();
-    
+
     // Map from ChunkCoord to server timestamp (from registry)
     private final Map<ChunkCoord, Long> serverTimestamps = new ConcurrentHashMap<>();
-    
+
     // Current world ID for persistence
     private String currentWorldId = null;
-    
+
     /**
      * Record that a chunk was explored locally at the given time.
      */
     public void setLocalTimestamp(ChunkCoord coord, long timestamp) {
         localTimestamps.put(coord, timestamp);
     }
-    
+
     /**
      * Get the local timestamp for a chunk.
      */
     public Optional<Long> getLocalTimestamp(ChunkCoord coord) {
         return Optional.ofNullable(localTimestamps.get(coord));
     }
-    
+
     /**
      * Update server registry timestamp for a chunk.
      */
     public void setServerTimestamp(ChunkCoord coord, long timestamp) {
         serverTimestamps.put(coord, timestamp);
     }
-    
+
     /**
      * Get the server timestamp for a chunk.
      */
     public Optional<Long> getServerTimestamp(ChunkCoord coord) {
         return Optional.ofNullable(serverTimestamps.get(coord));
     }
-    
+
     /**
      * Check if a chunk needs to be uploaded (local is newer than server).
      */
     public boolean needsUpload(ChunkCoord coord) {
         Long local = localTimestamps.get(coord);
         if (local == null) return false;
-        
+
         Long server = serverTimestamps.get(coord);
         return server == null || local > server;
     }
-    
+
     /**
      * Check if a chunk needs to be downloaded (server is newer than local).
      */
     public boolean needsDownload(ChunkCoord coord) {
         Long server = serverTimestamps.get(coord);
         if (server == null) return false;
-        
+
         Long local = localTimestamps.get(coord);
         return local == null || server > local;
     }
-    
+
     /**
      * Get all chunks that need to be uploaded.
      */
@@ -93,7 +93,7 @@ public class ClientTimestampTracker {
         });
         return result;
     }
-    
+
     /**
      * Get all server chunks that need to be downloaded.
      */
@@ -107,7 +107,7 @@ public class ClientTimestampTracker {
         });
         return result;
     }
-    
+
     /**
      * Clear all timestamps (e.g., when disconnecting).
      */
@@ -115,30 +115,30 @@ public class ClientTimestampTracker {
         localTimestamps.clear();
         serverTimestamps.clear();
     }
-    
+
     /**
      * Clear only server timestamps (keep local for offline use).
      */
     public void clearServerTimestamps() {
         serverTimestamps.clear();
     }
-    
+
     /**
      * Get count of tracked local chunks.
      */
     public int getLocalCount() {
         return localTimestamps.size();
     }
-    
+
     /**
      * Get count of known server chunks.
      */
     public int getServerCount() {
         return serverTimestamps.size();
     }
-    
+
     // ==================== Persistence ====================
-    
+
     /**
      * Load local timestamps for the given world ID.
      * Should be called when connecting to a server.
@@ -148,47 +148,47 @@ public class ClientTimestampTracker {
             XaeroSync.LOGGER.warn("Cannot load timestamps: no world ID");
             return;
         }
-        
+
         // Save current world's timestamps before switching
         if (currentWorldId != null && !currentWorldId.equals(worldId)) {
             save();
         }
-        
+
         currentWorldId = worldId;
         localTimestamps.clear();
-        
+
         Path file = getTimestampFile(worldId);
         if (!Files.exists(file)) {
             XaeroSync.LOGGER.debug("No timestamp file found for world {}", worldId);
             return;
         }
-        
+
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(file)))) {
             int version = in.readInt();
             if (version != FILE_VERSION) {
                 XaeroSync.LOGGER.warn("Timestamp file version mismatch (expected {}, got {}), ignoring", FILE_VERSION, version);
                 return;
             }
-            
+
             int count = in.readInt();
             for (int i = 0; i < count; i++) {
                 String dimension = in.readUTF();
                 int x = in.readInt();
                 int z = in.readInt();
                 long timestamp = in.readLong();
-                
+
                 ResourceLocation dim = ResourceLocation.tryParse(dimension);
                 if (dim != null) {
                     localTimestamps.put(new ChunkCoord(dim, x, z), timestamp);
                 }
             }
-            
+
             XaeroSync.LOGGER.info("Loaded {} local timestamps for world {}", count, worldId);
         } catch (IOException e) {
             XaeroSync.LOGGER.error("Failed to load timestamps for world {}", worldId, e);
         }
     }
-    
+
     /**
      * Save local timestamps for the current world.
      * Should be called when disconnecting or periodically.
@@ -198,22 +198,22 @@ public class ClientTimestampTracker {
             XaeroSync.LOGGER.debug("Cannot save timestamps: no current world ID");
             return;
         }
-        
+
         if (localTimestamps.isEmpty()) {
             XaeroSync.LOGGER.debug("No timestamps to save for world {}", currentWorldId);
             return;
         }
-        
+
         Path file = getTimestampFile(currentWorldId);
         XaeroSync.LOGGER.info("Saving {} timestamps to {}", localTimestamps.size(), file);
-        
+
         try {
             Files.createDirectories(file.getParent());
-            
+
             try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(file)))) {
                 out.writeInt(FILE_VERSION);
                 out.writeInt(localTimestamps.size());
-                
+
                 for (Map.Entry<ChunkCoord, Long> entry : localTimestamps.entrySet()) {
                     ChunkCoord coord = entry.getKey();
                     out.writeUTF(coord.dimension().toString());
@@ -222,13 +222,13 @@ public class ClientTimestampTracker {
                     out.writeLong(entry.getValue());
                 }
             }
-            
+
             XaeroSync.LOGGER.info("Saved {} local timestamps for world {}", localTimestamps.size(), currentWorldId);
         } catch (IOException e) {
             XaeroSync.LOGGER.error("Failed to save timestamps for world {}", currentWorldId, e);
         }
     }
-    
+
     /**
      * Get the path to the timestamp file for a world.
      */
@@ -238,7 +238,7 @@ public class ClientTimestampTracker {
         Path gameDir = Minecraft.getInstance().gameDirectory.toPath();
         return gameDir.resolve("xaerosync").resolve("timestamps").resolve(safeWorldId + ".dat");
     }
-    
+
     /**
      * Get the current world ID.
      */

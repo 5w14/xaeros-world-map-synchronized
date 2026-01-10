@@ -13,23 +13,23 @@ import java.util.function.Consumer;
  * Called by the MapWriterMixin when a chunk is explored/updated.
  */
 public class ChunkExplorationCallback {
-    
+
     private static final List<Consumer<ChunkExplorationEvent>> listeners = new ArrayList<>();
-    
+
     /**
      * Register a listener for chunk exploration events.
      */
     public static void register(Consumer<ChunkExplorationEvent> listener) {
         listeners.add(listener);
     }
-    
+
     /**
      * Unregister a listener.
      */
     public static void unregister(Consumer<ChunkExplorationEvent> listener) {
         listeners.remove(listener);
     }
-    
+
     /**
      * Called by the mixin when a chunk tile is explored/updated.
      */
@@ -37,7 +37,7 @@ public class ChunkExplorationCallback {
         if (listeners.isEmpty()) {
             return;
         }
-        
+
         ChunkExplorationEvent event = new ChunkExplorationEvent(coord, tileLocalX, tileLocalZ, mapProcessor);
         for (Consumer<ChunkExplorationEvent> listener : listeners) {
             try {
@@ -47,14 +47,15 @@ public class ChunkExplorationCallback {
             }
         }
     }
-    
+
     /**
      * Event data for chunk exploration.
      */
     public record ChunkExplorationEvent(
-        ChunkCoord coord,
-        int tileLocalX, // Local tile index within the chunk (0-3)
-        int tileLocalZ,
-        MapProcessor mapProcessor
-    ) {}
+            ChunkCoord coord,
+            int tileLocalX, // Local tile index within the chunk (0-3)
+            int tileLocalZ,
+            MapProcessor mapProcessor
+    ) {
+    }
 }

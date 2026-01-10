@@ -47,14 +47,14 @@ public class XaeroSync {
         return new ResourceLocation(MODID, loc);
     }
 
-    @SubscribeEvent 
+    @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         currentServer = event.getServer();
     }
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
-        @SubscribeEvent 
+        @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             XaeroSyncClient.init();
         }
