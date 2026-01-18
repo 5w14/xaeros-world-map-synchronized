@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "xaeromapsync.refmap.json",
   "mixins": [
+    "accessor.MapPixelAccessor"
   ],
   "client": [
     "MapWriterMixin",

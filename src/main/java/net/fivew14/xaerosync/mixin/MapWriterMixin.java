@@ -1,6 +1,7 @@
 package net.fivew14.xaerosync.mixin;
 
 import net.fivew14.xaerosync.client.sync.ChunkExplorationCallback;
+import net.fivew14.xaerosync.client.sync.SyncedChunkApplier;
 import net.fivew14.xaerosync.common.ChunkCoord;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -24,9 +25,7 @@ import xaero.map.region.OverlayManager;
  */
 @Mixin(value = MapWriter.class, remap = false)
 public abstract class MapWriterMixin {
-
-    @Shadow
-    private MapProcessor mapProcessor;
+    @Shadow(remap = false) private MapProcessor mapProcessor;
 
     /**
      * Inject after a tile has been written and committed to the chunk.
@@ -44,7 +43,7 @@ public abstract class MapWriterMixin {
     private void onChunkWritten(
             Level world, Registry<Block> blockRegistry, int distance, boolean onlyLoad, Registry<Biome> biomeRegistry, OverlayManager overlayManager, boolean loadChunks, boolean updateChunks, boolean ignoreHeightmaps, boolean flowers, boolean detailedDebug, BlockPos.MutableBlockPos mutableBlockPos3, BlockTintProvider blockTintProvider, int caveDepth, int caveStart, int layerToWrite, int tileChunkX, int tileChunkZ, int tileChunkLocalX, int tileChunkLocalZ, int chunkX, int chunkZ, CallbackInfoReturnable<Boolean> cir) {
         // Only care about surface layer
-        if (layerToWrite != Integer.MAX_VALUE) {
+        if (layerToWrite != SyncedChunkApplier.SURFACE_LAYER) {
             return;
         }
 

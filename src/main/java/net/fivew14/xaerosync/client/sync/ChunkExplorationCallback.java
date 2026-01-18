@@ -6,6 +6,7 @@ import xaero.map.MapProcessor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -14,7 +15,7 @@ import java.util.function.Consumer;
  */
 public class ChunkExplorationCallback {
 
-    private static final List<Consumer<ChunkExplorationEvent>> listeners = new ArrayList<>();
+    private static final List<Consumer<ChunkExplorationEvent>> listeners = new CopyOnWriteArrayList<>();
 
     /**
      * Register a listener for chunk exploration events.

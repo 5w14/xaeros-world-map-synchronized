@@ -1,6 +1,7 @@
 package net.fivew14.xaerosync.client.sync;
 
 import net.fivew14.xaerosync.XaeroSync;
+import net.fivew14.xaerosync.mixin.accessor.MapPixelAccessor;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -15,7 +16,6 @@ import xaero.map.region.*;
 
 import javax.annotation.Nullable;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,35 +31,20 @@ public class ChunkSerializer {
 
     private static final byte CURRENT_VERSION = 2;
 
-    // Reflection for accessing protected fields in MapPixel
-    private static Field lightField;
-    private static Field glowingField;
-
-    static {
-        try {
-            lightField = MapPixel.class.getDeclaredField("light");
-            lightField.setAccessible(true);
-            glowingField = MapPixel.class.getDeclaredField("glowing");
-            glowingField.setAccessible(true);
-        } catch (NoSuchFieldException e) {
-            XaeroSync.LOGGER.error("Failed to access MapPixel fields via reflection", e);
-        }
-    }
-
     private static byte getLight(MapPixel pixel) {
-        try {
-            return lightField != null ? lightField.getByte(pixel) : 0;
-        } catch (IllegalAccessException e) {
-            return 0;
+        if (pixel instanceof MapPixelAccessor accessor) {
+            return accessor.xaeromapsync$getLight();
         }
+        XaeroSync.LOGGER.warn("MapPixel does not implement MapPixelAccessor, light data may be lost");
+        return 0;
     }
 
     private static boolean isGlowing(MapPixel pixel) {
-        try {
-            return glowingField != null && glowingField.getBoolean(pixel);
-        } catch (IllegalAccessException e) {
-            return false;
+        if (pixel instanceof MapPixelAccessor accessor) {
+            return accessor.xaeromapsync$isGlowing();
         }
+        XaeroSync.LOGGER.warn("MapPixel does not implement MapPixelAccessor, glow data may be lost");
+        return false;
     }
 
     /**

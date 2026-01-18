@@ -5,7 +5,7 @@ package net.fivew14.xaerosync.common;
  */
 public class RateLimiter {
 
-    private final int maxTokensPerSecond;
+    private int maxTokensPerSecond;
     private double tokens;
     private long lastRefillTime;
 
@@ -58,10 +58,15 @@ public class RateLimiter {
 
     /**
      * Update the max tokens per second (for config changes).
+     * Adjusts current tokens proportionally if increasing the rate.
      */
     public synchronized void setMaxPerSecond(int maxPerSecond) {
-        // Note: This doesn't change the current tokens, just future refill rate
-        // Would need to recreate the limiter to apply new max
+        if (maxPerSecond <= 0) {
+            throw new IllegalArgumentException("maxPerSecond must be positive");
+        }
+        double ratio = (double) maxPerSecond / this.maxTokensPerSecond;
+        this.tokens = Math.min(maxPerSecond, this.tokens * ratio);
+        this.maxTokensPerSecond = maxPerSecond;
     }
 
     private void refill() {

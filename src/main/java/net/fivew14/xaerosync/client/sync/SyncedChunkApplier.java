@@ -18,7 +18,7 @@ import java.util.Optional;
  */
 public class SyncedChunkApplier {
 
-    private static final int SURFACE_LAYER = Integer.MAX_VALUE;
+    public static final int SURFACE_LAYER = Integer.MAX_VALUE;
 
     /**
      * Try to apply a single cached chunk immediately.
