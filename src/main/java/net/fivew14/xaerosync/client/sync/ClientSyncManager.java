@@ -61,16 +61,6 @@ public class ClientSyncManager {
     // Pending chunks (waiting for data from server)
     private final Set<ChunkCoord> pendingDownloads = Collections.synchronizedSet(new HashSet<>());
 
-    // Re-queue timer for failed uploads (every 30 seconds)
-    private static final long REQUEUE_INTERVAL_MS = 30_000;
-    private long lastRequeueTime = 0;
-
-    // Debounce map: tracks when chunks were last queued for upload to avoid rapid re-queueing
-    private static final long DEBOUNCE_INTERVAL_MS = 5_000;
-    private final Map<ChunkCoord, Long> recentlyQueuedChunks = new ConcurrentHashMap<>();
-    private static final long DEBOUNCE_CLEANUP_INTERVAL_MS = 60_000;
-    private long lastDebounceCleanupTime = 0;
-
     // Local timestamp update interval - don't update localTimestamp more often than this
     // This prevents constant timestamp updates from Xaero's per-tile writeChunk calls
     // Should match or be close to server's min update interval since we can't upload more often anyway
@@ -78,12 +68,23 @@ public class ClientSyncManager {
 
     // Periodic save of timestamps (every 5 minutes)
     private static final long TIMESTAMP_SAVE_INTERVAL_MS = 5 * 60 * 1000;
-    private long lastTimestampSaveTime = 0;
 
     // Periodic processing of cached chunks waiting to be applied
     private static final long CACHE_PROCESS_INTERVAL_MS = 1_000; // Every second
     private static final int CACHE_PROCESS_MAX_CHUNKS = 5; // Max chunks per tick
+
+    // Re-queue timer for failed uploads (every 30 seconds)
+    private static final long REQUEUE_INTERVAL_MS = 30_000;
+
+    // Debounce map: tracks when chunks were last queued for upload to avoid rapid re-queueing
+    private static final long DEBOUNCE_INTERVAL_MS = 5_000;
+    private final Map<ChunkCoord, Long> recentlyQueuedChunks = new ConcurrentHashMap<>();
+    private static final long DEBOUNCE_CLEANUP_INTERVAL_MS = 60_000;
+
+    private long lastTimestampSaveTime = 0;
     private long lastCacheProcessTime = 0;
+    private long lastDebounceCleanupTime = 0;
+    private long lastRequeueTime = 0;
 
     private ClientSyncManager() {
         uploadLimiter = new RateLimiter(Config.CLIENT_MAX_UPLOAD_PER_SECOND.get());

@@ -181,10 +181,18 @@ public class ServerSyncStorage {
                 return;
             }
 
+            int scannedChunks = 0;
+            int failedChunks = 0;
+
             try (var dimDirs = Files.newDirectoryStream(storageRoot, Files::isDirectory)) {
                 for (Path dimDir : dimDirs) {
                     String dimName = dimDir.getFileName().toString();
                     ResourceLocation dimension = DimensionUtils.fromFilesystemName(dimName);
+
+                    if (dimension == null) {
+                        XaeroSync.LOGGER.warn("Invalid dimension folder name: {}", dimName);
+                        continue;
+                    }
 
                     try (var chunkFiles = Files.newDirectoryStream(dimDir, "*.bin")) {
                         for (Path chunkFile : chunkFiles) {
@@ -192,12 +200,24 @@ public class ServerSyncStorage {
                             ChunkCoord coord = parseChunkFilename(dimension, filename);
                             if (coord != null) {
                                 Optional<ChunkMetadata> metadata = readMetadataFromPath(chunkFile);
-                                metadata.ifPresent(meta -> registry.put(coord, meta.timestamp()));
+                                if (metadata.isPresent()) {
+                                    registry.put(coord, metadata.get().timestamp());
+                                    scannedChunks++;
+                                } else {
+                                    failedChunks++;
+                                }
+                            } else {
+                                failedChunks++;
                             }
                         }
                     }
                 }
             }
+
+            if (failedChunks > 0) {
+                XaeroSync.LOGGER.warn("Failed to scan {} chunks during registry initialization", failedChunks);
+            }
+            XaeroSync.LOGGER.info("Scanned {} chunks into registry", scannedChunks);
         } catch (IOException e) {
             XaeroSync.LOGGER.error("Failed to scan storage", e);
         } finally {

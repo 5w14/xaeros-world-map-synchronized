@@ -4,31 +4,32 @@ import net.fivew14.xaerosync.common.ChunkCoord;
 import net.fivew14.xaerosync.common.RateLimiter;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Tracks sync state for a connected player on the server.
  * Manages registry transfer progress, pending downloads, and rate limiting.
+ * Thread-safe implementation.
  */
 public class PlayerSyncState {
+
+    private static final int MAX_PENDING_DOWNLOADS = 1000;
 
     private final UUID playerId;
     private final String playerName;
     private final RateLimiter uploadLimiter;
     private final RateLimiter downloadLimiter;
 
-    // Registry transfer state
-    private boolean registryTransferComplete = false;
-    private int registryBatchesSent = 0;
+    private final AtomicBoolean registryTransferComplete = new AtomicBoolean(false);
+    private final AtomicInteger registryBatchesSent = new AtomicInteger(0);
     private int totalRegistryBatches = 0;
 
-    // Pending download queue (chunks requested by player, waiting to be sent)
-    private final Queue<ChunkCoord> pendingDownloads = new LinkedList<>();
+    private final ConcurrentLinkedQueue<ChunkCoord> pendingDownloads = new ConcurrentLinkedQueue<>();
 
-    // Last tick time for rate-limited operations
-    private long lastRegistryTickTime = 0;
+    private volatile long lastRegistryTickTime = 0;
 
     public PlayerSyncState(ServerPlayer player, int maxUploadsPerSec, int maxDownloadsPerSec) {
         this.playerId = player.getUUID();
@@ -64,19 +65,19 @@ public class PlayerSyncState {
     // ==================== Registry Transfer ====================
 
     public boolean isRegistryTransferComplete() {
-        return registryTransferComplete;
+        return registryTransferComplete.get();
     }
 
     public void setRegistryTransferComplete(boolean complete) {
-        this.registryTransferComplete = complete;
+        registryTransferComplete.set(complete);
     }
 
     public int getRegistryBatchesSent() {
-        return registryBatchesSent;
+        return registryBatchesSent.get();
     }
 
     public void incrementRegistryBatchesSent() {
-        registryBatchesSent++;
+        registryBatchesSent.incrementAndGet();
     }
 
     public int getTotalRegistryBatches() {
@@ -101,6 +102,9 @@ public class PlayerSyncState {
      * Add a chunk to the pending downloads queue.
      */
     public void queueDownload(ChunkCoord coord) {
+        if (pendingDownloads.size() >= MAX_PENDING_DOWNLOADS) {
+            return;
+        }
         if (!pendingDownloads.contains(coord)) {
             pendingDownloads.add(coord);
         }

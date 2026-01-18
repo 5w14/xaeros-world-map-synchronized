@@ -1,5 +1,6 @@
 package net.fivew14.xaerosync.mixin;
 
+import net.fivew14.xaerosync.Config;
 import net.fivew14.xaerosync.client.sync.ChunkExplorationCallback;
 import net.fivew14.xaerosync.client.sync.SyncedChunkApplier;
 import net.fivew14.xaerosync.common.ChunkCoord;
@@ -49,6 +50,11 @@ public abstract class MapWriterMixin {
 
         // Get dimension from the world
         ResourceKey<Level> dimension = world.dimension();
+
+        // Check if dimension is allowed for sync
+        if (!Config.isDimensionAllowed(dimension.location().toString())) {
+            return;
+        }
 
         // Convert to tile chunk coordinates (4 MC chunks = 1 tile chunk)
         // chunkX/chunkZ are MC chunk coords, tileChunkX/tileChunkZ are tile chunk coords

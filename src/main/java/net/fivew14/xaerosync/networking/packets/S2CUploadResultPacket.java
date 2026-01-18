@@ -1,5 +1,6 @@
 package net.fivew14.xaerosync.networking.packets;
 
+import net.fivew14.xaerosync.XaeroSync;
 import net.fivew14.xaerosync.client.sync.ClientSyncManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -89,7 +90,12 @@ public class S2CUploadResultPacket {
 
     public static void handle(S2CUploadResultPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ClientSyncManager.getInstance().handleUploadResult(packet);
+            ClientSyncManager manager = ClientSyncManager.getInstance();
+            if (manager != null) {
+                manager.handleUploadResult(packet);
+            } else {
+                XaeroSync.LOGGER.warn("ClientSyncManager not initialized, ignoring upload result packet");
+            }
         });
         ctx.get().setPacketHandled(true);
     }

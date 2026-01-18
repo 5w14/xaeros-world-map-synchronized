@@ -32,8 +32,8 @@ public class ServerSyncManager {
     private final Map<UUID, PlayerSyncState> playerStates = new ConcurrentHashMap<>();
 
     // Cached registry entries for batch sending
-    private List<Map.Entry<ChunkCoord, Long>> cachedRegistryEntries;
-    private long lastRegistryCacheTime = 0;
+    private volatile List<Map.Entry<ChunkCoord, Long>> cachedRegistryEntries;
+    private volatile long lastRegistryCacheTime = 0;
     private static final long REGISTRY_CACHE_TTL_MS = 5000; // 5 seconds
 
     public ServerSyncManager(MinecraftServer server) {
@@ -334,7 +334,7 @@ public class ServerSyncManager {
         }
 
         ResourceLocation dim = ResourceLocation.tryParse(dimension);
-        if (dim == null) {
+        if (dim == null || dimension == null || dimension.isEmpty()) {
             sendUploadResult(player, dimension, x, z, S2CUploadResultPacket.Result.REJECTED_INVALID_DATA, "Invalid dimension");
             return;
         }
@@ -413,6 +413,7 @@ public class ServerSyncManager {
 
     private void invalidateRegistryCache() {
         cachedRegistryEntries = null;
+        lastRegistryCacheTime = 0;
     }
 
     // ==================== Utility ====================

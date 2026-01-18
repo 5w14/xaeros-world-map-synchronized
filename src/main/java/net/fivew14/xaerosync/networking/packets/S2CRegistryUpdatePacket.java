@@ -1,5 +1,6 @@
 package net.fivew14.xaerosync.networking.packets;
 
+import net.fivew14.xaerosync.XaeroSync;
 import net.fivew14.xaerosync.client.sync.ClientSyncManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -42,7 +43,12 @@ public class S2CRegistryUpdatePacket {
 
     public static void handle(S2CRegistryUpdatePacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ClientSyncManager.getInstance().handleRegistryUpdate(packet);
+            ClientSyncManager manager = ClientSyncManager.getInstance();
+            if (manager != null) {
+                manager.handleRegistryUpdate(packet);
+            } else {
+                XaeroSync.LOGGER.warn("ClientSyncManager not initialized, ignoring registry update packet");
+            }
         });
         ctx.get().setPacketHandled(true);
     }

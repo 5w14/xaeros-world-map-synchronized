@@ -1,5 +1,6 @@
 package net.fivew14.xaerosync.networking.packets;
 
+import net.fivew14.xaerosync.Config;
 import net.fivew14.xaerosync.server.XaeroSyncServer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -12,6 +13,8 @@ import java.util.function.Supplier;
  */
 public class C2SUploadChunkPacket {
 
+    private static final int MAX_DATA_SIZE = 1048576; // 1MB
+
     private final String dimension;
     private final int x;
     private final int z;
@@ -23,7 +26,7 @@ public class C2SUploadChunkPacket {
         this.x = x;
         this.z = z;
         this.timestamp = timestamp;
-        this.data = data;
+        this.data = data != null ? data.clone() : new byte[0];
     }
 
     public static void encode(C2SUploadChunkPacket packet, FriendlyByteBuf buf) {
@@ -35,13 +38,21 @@ public class C2SUploadChunkPacket {
     }
 
     public static C2SUploadChunkPacket decode(FriendlyByteBuf buf) {
-        return new C2SUploadChunkPacket(
-                buf.readUtf(),
-                buf.readVarInt(),
-                buf.readVarInt(),
-                buf.readVarLong(),
-                buf.readByteArray()
-        );
+        String dimension = buf.readUtf(Short.MAX_VALUE);
+        int x = buf.readVarInt();
+        int z = buf.readVarInt();
+        long timestamp = buf.readVarLong();
+
+        int readableBytes = buf.readableBytes();
+        int maxSize = Math.min(MAX_DATA_SIZE, Config.SERVER_MAX_CHUNK_DATA_SIZE.get());
+
+        if (readableBytes > maxSize) {
+            throw new IllegalArgumentException("Chunk data too large: " + readableBytes + " bytes (max: " + maxSize + ")");
+        }
+
+        byte[] data = buf.readByteArray();
+
+        return new C2SUploadChunkPacket(dimension, x, z, timestamp, data);
     }
 
     public static void handle(C2SUploadChunkPacket packet, Supplier<NetworkEvent.Context> ctx) {

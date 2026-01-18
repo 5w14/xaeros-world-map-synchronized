@@ -251,6 +251,18 @@ public class SyncedChunkApplier {
         }
 
         String dimensionStr = processor.getCurrentDimension();
+        if (dimensionStr == null) {
+            return false;
+        }
+
+        // Convert ResourceLocation dimension to string format for comparison
+        String coordDimensionStr = coord.dimension().toString();
+
+        // Validate dimension matches - if not, the chunk may be from a different dimension
+        if (!dimensionStr.equals(coordDimensionStr) && !dimensionStr.equals(coord.dimension().getNamespace() + ":" + coord.dimension().getPath())) {
+            XaeroSync.LOGGER.debug("Dimension mismatch for chunk {}: expected {}, got {}", coord, coordDimensionStr, dimensionStr);
+            return false;
+        }
 
         try {
             // Pause the writer while we modify the region
@@ -288,9 +300,13 @@ public class SyncedChunkApplier {
                     MapTile tile = tileChunk.getTile(tx, tz);
                     
                     if (tile == null) {
-                        // Create new tile from synced data
                         int tileChunkX16 = coord.x() * 4 + tx;
                         int tileChunkZ16 = coord.z() * 4 + tz;
+                        if (tileChunkX16 < 0 || tileChunkZ16 < 0 ||
+                            tileChunkX16 > Integer.MAX_VALUE / 2 || tileChunkZ16 > Integer.MAX_VALUE / 2) {
+                            XaeroSync.LOGGER.warn("Invalid tile coordinates for chunk {}: ({}, {})", coord, tx, tz);
+                            continue;
+                        }
                         tile = processor.getTilePool().get(dimensionStr, tileChunkX16, tileChunkZ16);
                     }
 

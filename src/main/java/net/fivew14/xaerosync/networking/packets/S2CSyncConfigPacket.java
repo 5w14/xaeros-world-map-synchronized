@@ -1,5 +1,6 @@
 package net.fivew14.xaerosync.networking.packets;
 
+import net.fivew14.xaerosync.XaeroSync;
 import net.fivew14.xaerosync.client.sync.ClientSyncManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -73,7 +74,12 @@ public class S2CSyncConfigPacket {
 
     public static void handle(S2CSyncConfigPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ClientSyncManager.getInstance().handleSyncConfig(packet);
+            ClientSyncManager manager = ClientSyncManager.getInstance();
+            if (manager != null) {
+                manager.handleSyncConfig(packet);
+            } else {
+                XaeroSync.LOGGER.warn("ClientSyncManager not initialized, ignoring sync config packet");
+            }
         });
         ctx.get().setPacketHandled(true);
     }

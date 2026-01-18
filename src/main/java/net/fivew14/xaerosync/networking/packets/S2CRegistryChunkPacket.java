@@ -1,5 +1,6 @@
 package net.fivew14.xaerosync.networking.packets;
 
+import net.fivew14.xaerosync.XaeroSync;
 import net.fivew14.xaerosync.client.sync.ClientSyncManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -72,7 +73,12 @@ public class S2CRegistryChunkPacket {
 
     public static void handle(S2CRegistryChunkPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ClientSyncManager.getInstance().handleRegistryChunk(packet);
+            ClientSyncManager manager = ClientSyncManager.getInstance();
+            if (manager != null) {
+                manager.handleRegistryChunk(packet);
+            } else {
+                XaeroSync.LOGGER.warn("ClientSyncManager not initialized, ignoring registry chunk packet");
+            }
         });
         ctx.get().setPacketHandled(true);
     }

@@ -280,7 +280,25 @@ public class SyncedChunkCache {
     }
     
     private String sanitizeFileName(String name) {
-        return name.replace(":", "_").replace("/", "_").replace("\\", "_");
+        if (name == null) {
+            return "unknown";
+        }
+        // Replace problematic characters
+        String sanitized = name.replace(":", "_")
+                .replace("/", "_")
+                .replace("\\", "_")
+                .replace("..", "_")
+                .replace(" ", "_");
+
+        // Remove any null bytes or control characters
+        sanitized = sanitized.replaceAll("[\\x00-\\x1f\\x7f]", "");
+
+        // Limit length to prevent extremely long paths
+        if (sanitized.length() > 100) {
+            sanitized = sanitized.substring(0, 100);
+        }
+
+        return sanitized;
     }
     
     // ==================== Data Classes ====================

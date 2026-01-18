@@ -1,81 +1,94 @@
 package net.fivew14.xaerosync.common;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Token bucket rate limiter for controlling upload/download rates.
+ * Thread-safe implementation using atomic variables.
  */
 public class RateLimiter {
 
-    private int maxTokensPerSecond;
-    private double tokens;
-    private long lastRefillTime;
+    private volatile int maxTokensPerSecond;
+    private final AtomicLong tokens;
+    private final long refillIntervalNanos;
+    private volatile long lastRefillTime;
+
+    private static final long MAX_REFRESH_INTERVAL_NS = 1_000_000_000L / 60L;
 
     /**
      * Create a new rate limiter.
      *
-     * @param maxPerSecond Maximum operations per second
+     * @param maxPerSecond Maximum operations per second (must be >= 1)
      */
     public RateLimiter(int maxPerSecond) {
+        if (maxPerSecond <= 0) {
+            throw new IllegalArgumentException("maxPerSecond must be positive");
+        }
         this.maxTokensPerSecond = maxPerSecond;
-        this.tokens = maxPerSecond; // Start full
-        this.lastRefillTime = System.currentTimeMillis();
+        this.tokens = new AtomicLong(maxPerSecond);
+        this.refillIntervalNanos = Math.min(MAX_REFRESH_INTERVAL_NS, 1_000_000_000L / maxPerSecond);
+        this.lastRefillTime = System.nanoTime();
     }
 
     /**
      * Try to acquire a token. Returns true if successful.
+     * Refills tokens based on elapsed time before attempting to acquire.
      */
-    public synchronized boolean tryAcquire() {
+    public boolean tryAcquire() {
         refill();
-        if (tokens >= 1.0) {
-            tokens -= 1.0;
-            return true;
+        long current = tokens.get();
+        if (current <= 0) {
+            return false;
         }
-        return false;
+        return tokens.compareAndSet(current, current - 1);
     }
 
     /**
      * Check if a token is available without consuming it.
      */
-    public synchronized boolean canAcquire() {
+    public boolean canAcquire() {
         refill();
-        return tokens >= 1.0;
+        return tokens.get() > 0;
     }
 
     /**
      * Get the current number of available tokens.
      */
-    public synchronized double getAvailableTokens() {
+    public long getAvailableTokens() {
         refill();
-        return tokens;
+        return tokens.get();
     }
 
     /**
      * Reset the rate limiter to full capacity.
      */
-    public synchronized void reset() {
-        this.tokens = maxTokensPerSecond;
-        this.lastRefillTime = System.currentTimeMillis();
+    public void reset() {
+        tokens.set(maxTokensPerSecond);
+        lastRefillTime = System.nanoTime();
     }
 
     /**
      * Update the max tokens per second (for config changes).
-     * Adjusts current tokens proportionally if increasing the rate.
+     * Resets tokens to the new maximum.
      */
-    public synchronized void setMaxPerSecond(int maxPerSecond) {
+    public void setMaxPerSecond(int maxPerSecond) {
         if (maxPerSecond <= 0) {
             throw new IllegalArgumentException("maxPerSecond must be positive");
         }
-        double ratio = (double) maxPerSecond / this.maxTokensPerSecond;
-        this.tokens = Math.min(maxPerSecond, this.tokens * ratio);
         this.maxTokensPerSecond = maxPerSecond;
+        reset();
     }
 
+    /**
+     * Refill tokens based on elapsed time.
+     * Called internally before each operation.
+     */
     private void refill() {
-        long now = System.currentTimeMillis();
+        long now = System.nanoTime();
         long elapsed = now - lastRefillTime;
-
-        if (elapsed > 0) {
-            double tokensToAdd = (elapsed / 1000.0) * maxTokensPerSecond;
-            tokens = Math.min(maxTokensPerSecond, tokens + tokensToAdd);
+        if (elapsed >= refillIntervalNanos) {
+            long intervals = elapsed / refillIntervalNanos;
+            tokens.updateAndGet(current -> Math.min(maxTokensPerSecond, current + intervals));
             lastRefillTime = now;
         }
     }

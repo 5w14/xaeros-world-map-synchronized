@@ -249,10 +249,41 @@ public class ClientTimestampTracker {
      * Get the path to the timestamp file for a world.
      */
     private Path getTimestampFile(String worldId) {
+        if (worldId == null || worldId.isEmpty()) {
+            return null;
+        }
+
         // Sanitize world ID for use as filename
-        String safeWorldId = worldId.replaceAll("[^a-zA-Z0-9_.-]", "_");
+        String safeWorldId = sanitizeWorldId(worldId);
         Path gameDir = Minecraft.getInstance().gameDirectory.toPath();
-        return gameDir.resolve("xaerosync").resolve("timestamps").resolve(safeWorldId + ".dat");
+        Path basePath = gameDir.resolve("xaerosync").resolve("timestamps");
+
+        // Resolve against base path to prevent directory traversal
+        Path filePath = basePath.resolve(safeWorldId + ".dat");
+        if (!filePath.startsWith(basePath)) {
+            XaeroSync.LOGGER.warn("Potential path traversal attempt blocked for world ID: {}", worldId);
+            return basePath.resolve("invalid_" + System.currentTimeMillis() + ".dat");
+        }
+
+        return filePath;
+    }
+
+    private String sanitizeWorldId(String worldId) {
+        if (worldId == null) {
+            return "unknown";
+        }
+        // Replace problematic characters
+        String sanitized = worldId.replaceAll("[^a-zA-Z0-9_.-]", "_");
+
+        // Remove any null bytes or control characters
+        sanitized = sanitized.replaceAll("[\\x00-\\x1f\\x7f]", "");
+
+        // Limit length to prevent extremely long paths
+        if (sanitized.length() > 100) {
+            sanitized = sanitized.substring(0, 100);
+        }
+
+        return sanitized;
     }
 
     /**

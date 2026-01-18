@@ -22,17 +22,28 @@ public final class DimensionUtils {
 
     /**
      * Convert a filesystem name back to a ResourceLocation.
-     * <p>
+     *
      * Example: "minecraft$overworld" -> "minecraft:overworld"
      */
     public static ResourceLocation fromFilesystemName(String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+
         int dollarIndex = name.indexOf('$');
         if (dollarIndex == -1) {
-            // Fallback: treat as path with minecraft namespace
+            if (name.contains(":") || name.contains("/") || name.contains("\\")) {
+                return null;
+            }
             return new ResourceLocation("minecraft", name);
         }
         String namespace = name.substring(0, dollarIndex);
         String path = name.substring(dollarIndex + 1);
+
+        if (namespace.isEmpty() || path.isEmpty()) {
+            return null;
+        }
+
         return new ResourceLocation(namespace, path);
     }
 
@@ -40,6 +51,12 @@ public final class DimensionUtils {
      * Check if a filesystem name is a valid dimension folder name.
      */
     public static boolean isValidDimensionFolder(String name) {
-        return name.contains("$") && !name.startsWith("$") && !name.endsWith("$");
+        if (name == null || name.isEmpty()) {
+            return false;
+        }
+        if (name.contains("$")) {
+            return !name.startsWith("$") && !name.endsWith("$");
+        }
+        return !name.contains(":") && !name.contains("/") && !name.contains("\\");
     }
 }
