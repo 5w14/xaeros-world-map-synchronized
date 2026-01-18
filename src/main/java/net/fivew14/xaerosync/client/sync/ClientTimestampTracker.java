@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClientTimestampTracker {
 
     private static final int FILE_VERSION = 1;
-    
+
     // Don't download chunks that were updated locally within this time window
     // This prevents overwriting chunks the player is actively exploring
     private static final long RECENT_UPDATE_THRESHOLD_MS = 90_000; // 1.5 minutes
@@ -83,7 +83,7 @@ public class ClientTimestampTracker {
         if (server == null) return false;
 
         Long local = localTimestamps.get(coord);
-        
+
         // If chunk was recently updated locally, don't download
         // (player is actively exploring this area)
         if (local != null) {
@@ -92,7 +92,7 @@ public class ClientTimestampTracker {
                 return false;
             }
         }
-        
+
         return local == null || server > local;
     }
 

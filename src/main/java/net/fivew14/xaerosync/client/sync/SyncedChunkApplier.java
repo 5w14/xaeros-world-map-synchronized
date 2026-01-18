@@ -23,11 +23,11 @@ public class SyncedChunkApplier {
     /**
      * Try to apply a single cached chunk immediately.
      * Called after storing a chunk in cache.
-     * 
+     * <p>
      * IMPORTANT: We never force regions to loaded state or create regions ourselves.
      * This ensures we don't interfere with Xaero's normal map generation.
      * We only apply synced data to regions that Xaero has already properly loaded.
-     * 
+     * <p>
      * If the region isn't ready, the chunk stays in cache and will be applied:
      * - Via the MapSaveLoadMixin when Xaero loads the region
      * - Via processPendingChunks() periodic check
@@ -60,7 +60,7 @@ public class SyncedChunkApplier {
         }
 
         int loadState = region.getLoadState();
-        
+
         if (loadState != 2) {
             // Region exists but isn't fully loaded yet
             // The mixin will apply our data when Xaero finishes loading it
@@ -83,10 +83,10 @@ public class SyncedChunkApplier {
      * Process all pending cached chunks and try to apply them.
      * Called periodically from ClientSyncManager to handle chunks whose regions
      * became ready without triggering the mixin.
-     * 
+     * <p>
      * IMPORTANT: We never force regions to loaded state or create regions ourselves.
      * This ensures we don't interfere with Xaero's normal map generation.
-     * 
+     *
      * @param maxChunks Maximum number of chunks to process per call (to avoid lag)
      * @return Number of chunks successfully applied
      */
@@ -138,7 +138,7 @@ public class SyncedChunkApplier {
     /**
      * Apply any cached synced chunks to a loaded region.
      * Called from MapSaveLoadMixin after Xaero loads a region from disk.
-     * 
+     * <p>
      * Note: At this point loadState may still be 1 (caller sets it to 2 after loadRegion returns),
      * but the region is ready for us to apply our data.
      */
@@ -172,9 +172,9 @@ public class SyncedChunkApplier {
             for (int localZ = 0; localZ < 8; localZ++) {
                 int chunkX = regionX * 8 + localX;
                 int chunkZ = regionZ * 8 + localZ;
-                
+
                 ChunkCoord coord = new ChunkCoord(dimension, chunkX, chunkZ);
-                
+
                 if (cache.hasChunk(coord)) {
                     boolean success = applyChunk(region, coord, localX, localZ);
                     if (success) {
@@ -186,7 +186,7 @@ public class SyncedChunkApplier {
         }
 
         if (appliedCount > 0) {
-            XaeroSync.LOGGER.info("Applied {} synced chunks to region ({}, {})", 
+            XaeroSync.LOGGER.info("Applied {} synced chunks to region ({}, {})",
                     appliedCount, regionX, regionZ);
         }
     }
@@ -194,10 +194,10 @@ public class SyncedChunkApplier {
     // Don't overwrite chunks that were updated locally within this time window
     // This gives Xaero time to write chunks the player is actively exploring
     private static final long RECENT_UPDATE_THRESHOLD_MS = 90_000; // 1.5 minutes
-    
+
     /**
      * Apply a single cached chunk to the region.
-     * 
+     * <p>
      * We skip chunks that were recently updated locally - this means Xaero
      * is actively writing to them and we shouldn't overwrite.
      */
@@ -206,12 +206,12 @@ public class SyncedChunkApplier {
         if (mc.level == null || mc.player == null) {
             return false;
         }
-        
+
         // Check if this chunk was recently updated locally
         // If so, Xaero is likely still working on it - don't overwrite
         ClientTimestampTracker tracker = ClientSyncManager.getInstance().getTimestampTracker();
         Optional<Long> localTimestamp = tracker.getLocalTimestamp(coord);
-        
+
         if (localTimestamp.isPresent()) {
             long timeSinceUpdate = System.currentTimeMillis() - localTimestamp.get();
             if (timeSinceUpdate < RECENT_UPDATE_THRESHOLD_MS) {
@@ -219,7 +219,7 @@ public class SyncedChunkApplier {
                 return false;
             }
         }
-        
+
         SyncedChunkCache cache = SyncedChunkCache.getInstance();
         SyncedChunkCache.CachedChunk cached = cache.load(coord);
         if (cached == null) {
@@ -298,12 +298,12 @@ public class SyncedChunkApplier {
                     if (deserializedTile == null) continue;
 
                     MapTile tile = tileChunk.getTile(tx, tz);
-                    
+
                     if (tile == null) {
                         int tileChunkX16 = coord.x() * 4 + tx;
                         int tileChunkZ16 = coord.z() * 4 + tz;
                         if (tileChunkX16 < 0 || tileChunkZ16 < 0 ||
-                            tileChunkX16 > Integer.MAX_VALUE / 2 || tileChunkZ16 > Integer.MAX_VALUE / 2) {
+                                tileChunkX16 > Integer.MAX_VALUE / 2 || tileChunkZ16 > Integer.MAX_VALUE / 2) {
                             XaeroSync.LOGGER.warn("Invalid tile coordinates for chunk {}: ({}, {})", coord, tx, tz);
                             continue;
                         }
@@ -330,9 +330,9 @@ public class SyncedChunkApplier {
                 tileChunk.setHasHadTerrain();
             }
 
-            XaeroSync.LOGGER.debug("Applied synced chunk {} (new chunk: {}, tiles updated: {})", 
+            XaeroSync.LOGGER.debug("Applied synced chunk {} (new chunk: {}, tiles updated: {})",
                     coord, createdNewChunk, anyTilesUpdated);
-            
+
             // Return true to remove from cache - we've processed this chunk
             // (even if no tiles were updated, the data has been handled)
             return true;
@@ -346,7 +346,7 @@ public class SyncedChunkApplier {
      * Apply deserialized tile data to a MapTile.
      */
     private static void applyTile(MapTile tile, ChunkSerializer.DeserializedTile deserializedTile,
-                                   MapProcessor processor) {
+                                  MapProcessor processor) {
         OverlayManager overlayManager = processor.getOverlayManager();
         OverlayBuilder overlayBuilder = new OverlayBuilder(overlayManager);
 

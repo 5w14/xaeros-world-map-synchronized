@@ -22,7 +22,7 @@ public final class DimensionUtils {
 
     /**
      * Convert a filesystem name back to a ResourceLocation.
-     *
+     * <p>
      * Example: "minecraft$overworld" -> "minecraft:overworld"
      */
     public static ResourceLocation fromFilesystemName(String name) {

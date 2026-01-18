@@ -1,8 +1,8 @@
 package net.fivew14.xaerosync.networking.packets;
 
+import net.fivew14.xaerosync.Config;
 import net.fivew14.xaerosync.XaeroSync;
 import net.fivew14.xaerosync.client.sync.ClientSyncManager;
-import net.fivew14.xaerosync.Config;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 

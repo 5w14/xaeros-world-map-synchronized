@@ -53,7 +53,7 @@ public class ClientSyncManager {
     // Queues - priority based on distance to player (closer = higher priority)
     private final Set<ChunkCoord> uploadQueueSet = ConcurrentHashMap.newKeySet();
     private final Set<ChunkCoord> downloadQueueSet = ConcurrentHashMap.newKeySet();
-    
+
     // Current player chunk position for distance calculations
     private volatile int playerChunkX = 0;
     private volatile int playerChunkZ = 0;
@@ -231,7 +231,7 @@ public class ClientSyncManager {
     public void handleRegistryUpdate(S2CRegistryUpdatePacket packet) {
         XaeroSync.LOGGER.info("Received registry update: dim={}, x={}, z={}, ts={}, syncEnabled={}",
                 packet.getDimension(), packet.getX(), packet.getZ(), packet.getTimestamp(), syncEnabled);
-        
+
         if (!syncEnabled) {
             XaeroSync.LOGGER.warn("Ignoring registry update - sync not enabled");
             return;
@@ -251,15 +251,15 @@ public class ClientSyncManager {
         Optional<Long> localTs = timestampTracker.getLocalTimestamp(coord);
         Optional<Long> serverTs = timestampTracker.getServerTimestamp(coord);
         boolean needsDownload = timestampTracker.needsDownload(coord);
-        
-        XaeroSync.LOGGER.info("Registry update for {}: autoDownload={}, needsDownload={}, localTs={}, serverTs={}, inPending={}, inQueue={}", 
-                coord, autoDownload, needsDownload, 
+
+        XaeroSync.LOGGER.info("Registry update for {}: autoDownload={}, needsDownload={}, localTs={}, serverTs={}, inPending={}, inQueue={}",
+                coord, autoDownload, needsDownload,
                 localTs.orElse(null), serverTs.orElse(null),
                 pendingDownloads.contains(coord), downloadQueueSet.contains(coord));
-        
+
         if (autoDownload && needsDownload) {
             queueDownload(coord);
-            XaeroSync.LOGGER.info("Queued chunk {} for download from registry update (queue size now: {})", 
+            XaeroSync.LOGGER.info("Queued chunk {} for download from registry update (queue size now: {})",
                     coord, downloadQueueSet.size());
         }
     }
@@ -279,11 +279,11 @@ public class ClientSyncManager {
         // Store in cache - the mixin will apply it when Xaero loads the region
         SyncedChunkCache.getInstance().store(coord, packet.getData(), packet.getTimestamp());
         timestampTracker.setLocalTimestamp(coord, packet.getTimestamp());
-        
+
         // Try to apply immediately if region is already loaded
         // (The MapSaveLoadMixin will handle it if region loads later)
         SyncedChunkApplier.tryApplyChunk(coord);
-        
+
         XaeroSync.LOGGER.debug("Cached chunk {} for application", coord);
     }
 
@@ -400,7 +400,7 @@ public class ClientSyncManager {
             }
         }
         if (queued > 0 || skippedNotLoaded > 0) {
-            XaeroSync.LOGGER.info("Queued {} chunks for upload ({} skipped - not loaded in map)", 
+            XaeroSync.LOGGER.info("Queued {} chunks for upload ({} skipped - not loaded in map)",
                     queued, skippedNotLoaded);
         }
     }
@@ -448,7 +448,7 @@ public class ClientSyncManager {
                 }
             }
         }
-        
+
         // Update player position for distance-based prioritization
         updatePlayerPosition();
 
@@ -461,25 +461,14 @@ public class ClientSyncManager {
         }
 
         // Process download requests - pick closest chunk to player
-        int downloadsProcessed = 0;
         while (!downloadQueueSet.isEmpty() && downloadLimiter.tryAcquire()) {
             ChunkCoord coord = pollClosest(downloadQueueSet);
             if (coord != null) {
                 requestDownload(coord);
-                downloadsProcessed++;
-            }
-        }
-        
-        // Periodic debug logging of queue state
-        if (now % 5000 < 50) { // Log every ~5 seconds
-            if (!downloadQueueSet.isEmpty() || !pendingDownloads.isEmpty()) {
-                XaeroSync.LOGGER.info("[DEBUG] Download state: queue={}, pending={}, player=({},{})->sync({},{})", 
-                        downloadQueueSet.size(), pendingDownloads.size(),
-                        playerChunkX, playerChunkZ, playerChunkX >> 2, playerChunkZ >> 2);
             }
         }
     }
-    
+
     /**
      * Update the cached player chunk position.
      */
@@ -490,43 +479,43 @@ public class ClientSyncManager {
             playerChunkZ = player.chunkPosition().z;
         }
     }
-    
+
     /**
      * Poll and remove the closest chunk to the player from the set.
      */
     @Nullable
     private ChunkCoord pollClosest(Set<ChunkCoord> set) {
         if (set.isEmpty()) return null;
-        
+
         ChunkCoord closest = null;
         int closestDistSq = Integer.MAX_VALUE;
-        
+
         // Convert player chunk coords to our chunk coords (64-block chunks = 4 MC chunks)
         int playerSyncChunkX = playerChunkX >> 2;
         int playerSyncChunkZ = playerChunkZ >> 2;
-        
+
         // Get current dimension for filtering
         Minecraft mc = Minecraft.getInstance();
         ResourceLocation currentDim = mc.level != null ? mc.level.dimension().location() : null;
-        
+
         for (ChunkCoord coord : set) {
             // Only consider chunks in the current dimension for distance calculation
             // (chunks in other dimensions get MAX_VALUE distance, effectively deprioritized)
             int distSq;
-            if (currentDim != null && coord.dimension().equals(currentDim)) {
+            if (coord.dimension().equals(currentDim)) {
                 int dx = coord.x() - playerSyncChunkX;
                 int dz = coord.z() - playerSyncChunkZ;
                 distSq = dx * dx + dz * dz;
             } else {
                 distSq = Integer.MAX_VALUE - 1; // Other dimensions are lower priority
             }
-            
+
             if (distSq < closestDistSq) {
                 closestDistSq = distSq;
                 closest = coord;
             }
         }
-        
+
         if (closest != null) {
             boolean removed = set.remove(closest);
             if (!removed) {

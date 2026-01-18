@@ -1,18 +1,17 @@
 package net.fivew14.xaerosync.mixin;
 
 import net.fivew14.xaerosync.client.sync.SyncedChunkApplier;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.Registry;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import xaero.map.biome.BiomeGetter;
 import xaero.map.file.MapSaveLoad;
 import xaero.map.region.MapRegion;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.Registry;
-import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Fluid;
-import xaero.map.biome.BiomeGetter;
 
 /**
  * Mixin to hook into Xaero's region loading.
@@ -24,7 +23,7 @@ public abstract class MapSaveLoadMixin {
     /**
      * Inject after loadRegion successfully loads a region.
      * This is where we apply our cached synced chunks.
-     * 
+     * <p>
      * Note: At this point the region's loadState may still be 1 (it gets set to 2 by the caller),
      * but the chunks inside are loaded and ready for our data.
      */

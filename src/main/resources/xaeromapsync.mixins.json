@@ -8,8 +8,8 @@
     "accessor.MapPixelAccessor"
   ],
   "client": [
-    "MapWriterMixin",
-    "MapSaveLoadMixin"
+    "MapSaveLoadMixin",
+    "MapWriterMixin"
   ],
   "injectors": {
     "defaultRequire": 1

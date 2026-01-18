@@ -218,20 +218,20 @@ public class ChunkSerializer {
         if (overlays == null || overlays.isEmpty()) {
             dos.writeByte(0);
         } else {
-                dos.writeByte(overlays.size());
-                for (Overlay overlay : overlays) {
-                    BlockState overlayState = overlay.getState();
-                    if (overlayState == null) {
-                        writeVarInt(dos, -1);
-                    } else {
-                        writeVarInt(dos, blockPalette.getOrDefault(overlayState, -1));
-                    }
-                    dos.writeByte(getLight(overlay));
-                    dos.writeBoolean(isGlowing(overlay));
-                    int opacity = overlay.getOpacity();
-                    dos.writeByte((byte) opacity);
+            dos.writeByte(overlays.size());
+            for (Overlay overlay : overlays) {
+                BlockState overlayState = overlay.getState();
+                if (overlayState == null) {
+                    writeVarInt(dos, -1);
+                } else {
+                    writeVarInt(dos, blockPalette.getOrDefault(overlayState, -1));
                 }
+                dos.writeByte(getLight(overlay));
+                dos.writeBoolean(isGlowing(overlay));
+                int opacity = overlay.getOpacity();
+                dos.writeByte((byte) opacity);
             }
+        }
     }
 
     /**

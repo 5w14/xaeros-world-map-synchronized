@@ -86,21 +86,21 @@ public class ServerSyncManager {
 
         // Initialize sync for this player
         initializeSyncForPlayer(player);
-        
+
         // On LAN: when sync becomes active (2nd player joins), also initialize 
         // sync for any existing players who weren't syncing yet
         if (!server.isDedicatedServer()) {
             for (ServerPlayer existingPlayer : server.getPlayerList().getPlayers()) {
-                if (!existingPlayer.getUUID().equals(player.getUUID()) && 
-                    !playerStates.containsKey(existingPlayer.getUUID())) {
-                    XaeroSync.LOGGER.info("Retroactively initializing sync for existing player {}", 
+                if (!existingPlayer.getUUID().equals(player.getUUID()) &&
+                        !playerStates.containsKey(existingPlayer.getUUID())) {
+                    XaeroSync.LOGGER.info("Retroactively initializing sync for existing player {}",
                             existingPlayer.getName().getString());
                     initializeSyncForPlayer(existingPlayer);
                 }
             }
         }
     }
-    
+
     /**
      * Initialize sync state and send registry to a player.
      */
@@ -108,7 +108,7 @@ public class ServerSyncManager {
         if (playerStates.containsKey(player.getUUID())) {
             return; // Already initialized
         }
-        
+
         // Create player state
         PlayerSyncState state = new PlayerSyncState(
                 player,
@@ -146,7 +146,13 @@ public class ServerSyncManager {
         long now = System.currentTimeMillis();
         long registryIntervalMs = 1000 / Config.SERVER_REGISTRY_PACKETS_PER_SECOND.get();
 
-        for (Map.Entry<UUID, PlayerSyncState> entry : playerStates.entrySet()) {
+        // Copy entries to avoid CME during iteration
+        List<Map.Entry<UUID, PlayerSyncState>> statesCopy;
+        synchronized (playerStates) {
+            statesCopy = new ArrayList<>(playerStates.entrySet());
+        }
+
+        for (Map.Entry<UUID, PlayerSyncState> entry : statesCopy) {
             PlayerSyncState state = entry.getValue();
             ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
             if (player == null) continue;
@@ -253,11 +259,19 @@ public class ServerSyncManager {
 
     private List<Map.Entry<ChunkCoord, Long>> getRegistryEntries() {
         long now = System.currentTimeMillis();
-        if (cachedRegistryEntries == null || now - lastRegistryCacheTime > REGISTRY_CACHE_TTL_MS) {
-            cachedRegistryEntries = new ArrayList<>(registry.snapshot().entrySet());
-            lastRegistryCacheTime = now;
+        List<Map.Entry<ChunkCoord, Long>> cached = cachedRegistryEntries;
+        if (cached == null || now - lastRegistryCacheTime > REGISTRY_CACHE_TTL_MS) {
+            synchronized (this) {
+                // Double-check inside synchronized block
+                cached = cachedRegistryEntries;
+                if (cached == null || now - lastRegistryCacheTime > REGISTRY_CACHE_TTL_MS) {
+                    cachedRegistryEntries = new ArrayList<>(registry.snapshot().entrySet());
+                    lastRegistryCacheTime = now;
+                    cached = cachedRegistryEntries;
+                }
+            }
         }
-        return cachedRegistryEntries;
+        return cached;
     }
 
     // ==================== Chunk Download ====================
@@ -402,8 +416,16 @@ public class ServerSyncManager {
         );
 
         int sentCount = 0;
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (!player.getUUID().equals(excludePlayer) && playerStates.containsKey(player.getUUID())) {
+        List<ServerPlayer> players;
+        synchronized (playerStates) {
+            players = server.getPlayerList().getPlayers().stream()
+                    .filter(p -> !p.getUUID().equals(excludePlayer))
+                    .filter(p -> playerStates.containsKey(p.getUUID()))
+                    .toList();
+        }
+        for (ServerPlayer player : players) {
+            PlayerSyncState state = playerStates.get(player.getUUID());
+            if (state != null && state.isSyncEnabled()) {
                 XaeroSyncNetworking.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
                 sentCount++;
             }

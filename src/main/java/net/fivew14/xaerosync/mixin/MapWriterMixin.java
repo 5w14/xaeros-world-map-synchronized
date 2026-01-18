@@ -26,7 +26,8 @@ import xaero.map.region.OverlayManager;
  */
 @Mixin(value = MapWriter.class, remap = false)
 public abstract class MapWriterMixin {
-    @Shadow(remap = false) private MapProcessor mapProcessor;
+    @Shadow(remap = false)
+    private MapProcessor mapProcessor;
 
     /**
      * Inject after a tile has been written and committed to the chunk.

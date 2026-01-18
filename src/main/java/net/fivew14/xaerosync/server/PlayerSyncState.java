@@ -31,6 +31,8 @@ public class PlayerSyncState {
 
     private volatile long lastRegistryTickTime = 0;
 
+    private volatile boolean syncEnabled = true;
+
     public PlayerSyncState(ServerPlayer player, int maxUploadsPerSec, int maxDownloadsPerSec) {
         this.playerId = player.getUUID();
         this.playerName = player.getName().getString();
@@ -94,6 +96,14 @@ public class PlayerSyncState {
 
     public void setLastRegistryTickTime(long time) {
         this.lastRegistryTickTime = time;
+    }
+
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean enabled) {
+        this.syncEnabled = enabled;
     }
 
     // ==================== Download Queue ====================
