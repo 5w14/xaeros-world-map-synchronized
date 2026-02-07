@@ -126,6 +126,10 @@ tasks.named('jar', Jar).configure {
                     "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")])
     }
 
+    // Exclude compile-time stub for Xaero's MapUpdateFastConfig so we don't ship a duplicate class
+    exclude 'xaero/map/region/MapUpdateFastConfig.class'
+    exclude 'xaero/map/region/MapUpdateFastConfig$*.class'
+
     finalizedBy 'reobfJar'
 }
 
