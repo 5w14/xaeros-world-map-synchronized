@@ -34,7 +34,7 @@ public abstract class MapSaveLoadMixin {
     )
     private void onRegionLoaded(
             MapRegion region, HolderLookup<Block> blockLookup, Registry<Block> blockRegistry, Registry<Fluid> fluidRegistry,
-            BiomeGetter biomeGetter, int extraAttempts, CallbackInfoReturnable<Boolean> cir
+            BiomeGetter biomeGetter, boolean fastLoad, int extraAttempts, CallbackInfoReturnable<Boolean> cir
     ) {
         // Only apply if the region was successfully loaded
         // Don't check region.getLoadState() == 2 because the caller sets that AFTER this method returns
